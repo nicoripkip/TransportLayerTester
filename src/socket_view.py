@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6 import QtCore, QtWidgets
 
 
 FIXED_WIDTH = 130
@@ -23,7 +23,7 @@ class SocketView(QtWidgets.QWidget):
 
 
     def draw(self):
-        label2 = QtWidgets.QTextBrowser()
+        self.text_browser = QtWidgets.QTextBrowser()
         #label2.setFixedWidth(1000)
         
 
@@ -75,6 +75,36 @@ class SocketView(QtWidgets.QWidget):
         self.group_ip.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.group_ip.setLayout(self.ip_ver)
 
+        # SSL Options
+        self.tls_cert_label = QtWidgets.QLabel("TLS Certificate:")
+        self.tls_cert_label.setFixedWidth(FIXED_WIDTH)
+        self.tls_cert_label.setFixedHeight(20)
+        self.tls_cert_label.setStyleSheet("background-color: #FFFFFF; color: #000000;")
+
+        self.tls_key_label = QtWidgets.QLabel("TLS Key:")
+        self.tls_key_label.setFixedWidth(FIXED_WIDTH)
+        self.tls_key_label.setFixedHeight(20)
+        self.tls_key_label.setStyleSheet("background-color: #FFFFFF; color: #000000;")
+
+        self.tls_cert_file = QtWidgets.QFileDialog()
+        self.tls_cert_file.setFixedWidth(FIXED_WIDTH)
+        self.tls_cert_file.setFixedHeight(20)
+
+        self.tls_left = QtWidgets.QVBoxLayout()
+        self.tls_right = QtWidgets.QVBoxLayout()
+        self.tls_ver = QtWidgets.QHBoxLayout()
+        self.tls_ver.addLayout(self.tls_left)
+        self.tls_ver.addLayout(self.tls_right)
+
+        self.tls_left.addWidget(self.tls_cert_label)
+        self.tls_left.addWidget(self.tls_cert_file)
+        self.tls_right.addWidget(self.tls_key_label)
+
+        self.group_TLS = QtWidgets.QGroupBox("TLS")
+        self.group_TLS.setFixedWidth(300)
+        self.group_TLS.setFixedHeight(150)
+        self.group_TLS.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        self.group_TLS.setLayout(self.tls_ver)
 
         # These stuff is for handling send data
         self.input_send = QtWidgets.QLineEdit()
@@ -87,13 +117,15 @@ class SocketView(QtWidgets.QWidget):
         self.layout_send.addWidget(self.input_send)
         self.layout_send.addWidget(self.button_send)
 
-        self.layout_left.addWidget(label2)
+        # add the text browser
+        self.layout_left.addWidget(self.text_browser)
         self.layout_left.addLayout(self.layout_send)
 
+        # Add the rest of the layouts
         self.layout_mod.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.layout_mod.addWidget(self.group_ip)
+        self.layout_mod.addWidget(self.group_TLS)
 
-        
         self.layout_right.addLayout(self.layout_mod)
 
         self.layout.addLayout(self.layout_left)
@@ -115,4 +147,6 @@ class SocketView(QtWidgets.QWidget):
         pass
 
     def ping_to_socket(self):
-        pass
+        self.text_buffer.append("Trying to ping: ")
+        self.text_browser.clear()
+        self.text_browser.append("\n".join(self.text_buffer))
