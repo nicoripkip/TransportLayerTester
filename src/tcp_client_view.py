@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets
 from tcp import TCPClient
-from buffers import MessageBuffer, MessageObject
+from buffers import MessageBuffer, MsgObject
 import threading
 
 
@@ -9,8 +9,6 @@ FIXED_WIDGET_HEIGHT = 20
 
 
 class SocketView(QtWidgets.QWidget):
-    _message = None
-
     def __init__(self):
         super().__init__()
 
@@ -27,9 +25,13 @@ class SocketView(QtWidgets.QWidget):
 
         self.ip_address     = ""
         self.ip_port        = ""
-        self.message_buff = MessageBuffer()
 
-        self.buffer = []
+        # Setup internal messaging system for receiving data from threads
+        self.buffer = MessageBuffer()
+        self.message = ""
+
+        # Try to subscribe
+        self.buffer.subscribe("tcpclient", "gui", self.update_buffer)
 
         self.draw()
 
@@ -150,15 +152,17 @@ class SocketView(QtWidgets.QWidget):
 
 
     def update_text_browser(self):
-        # Update the contents of the textbrowser
-        self.text_browser.clear()
-        self.text_browser.append("\n".join(self.buffer))
+        # Update the contents of the
+        if len(self.message) > 0:
+            # self.text_browser.clear()
+            self.text_browser.append(self.message)
+            self.message = ""
 
     def connect_to_socket(self):
         self.ip_address = self.input_ip.text()
         self.ip_port    = int(self.input_port.text())
 
-        self.buffer.append(f"Trying to connect to: {self.ip_address}:{self.ip_port}")
+        self.buffer.publish("tcpclient", f"Trying to connect to: {self.ip_address}:{self.ip_port}")
 
         if len(self.ip_address) > 0:
             print(self.ip_address)
@@ -173,6 +177,9 @@ class SocketView(QtWidgets.QWidget):
     def send_to_socket(self):
         pass
 
-
     def ping_to_socket(self):
-        self.buffer.append("Trying to ping: ")
+        self.buffer.publish("tcpclient", "Trying to ping: ")
+
+    def update_buffer(self, msg: str):
+        print("Callback called!")
+        self.message = msg

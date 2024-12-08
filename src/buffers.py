@@ -1,41 +1,74 @@
 import threading
 from dataclasses import dataclass
+from typing import Callable, List
 
 
-class MessageObject:
-    def __init__(self, channel, data):
-        self.channel = channel
-        self.data = data
+@dataclass
+class MsgSubscriber:
+    client_id: str
+    callback: Callable
 
-    def get_channel(self):
-        return self.channel
 
-    def get_data(self):
-        return self.data
+@dataclass
+class MsgObject:
+    topic: str
+    data: List[str]
+    subscribers: List[MsgSubscriber]
 
 
 class MessageBuffer:
-    _instance   = None
-    _buffer     = []
-    _lock       = threading.Lock()
+    _instance = None
+    _buffer = {}
+    _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(MessageBuffer, cls).__new__(cls, *args, **kwargs)
+        if cls._instance is None:
+            with cls._lock:
+                if not cls._instance:
+                    print("Instance created")
+                    cls._instance = super(MessageBuffer, cls).__new__(cls, *args, **kwargs)
+
+
         return cls._instance
 
-    def publish(self, message):
+    def publish(self, topic: str, msg: str):
         self._lock.acquire()
-        self._buffer.append(message)
+
+        if topic not in self._buffer:
+            self._buffer[topic] = MsgObject(topic, [], [])
+
+        self._buffer[topic].data.append(msg)
+
+        # print(self._buffer[topic].data)
+        # print(self._buffer[topic].subscribers)
+
         self._lock.release()
 
-    def subscribe(self, callback):
+    def subscribe(self, topic: str, client_id: str, callback: Callable):
         self._lock.acquire()
-        msg = self._buffer.pop(0)
+
+        if topic not in self._buffer:
+            self._buffer[topic] = MsgObject(topic, [], [])
+
+        self._buffer[topic].subscribers.append(MsgSubscriber(client_id, callback))
+
         self._lock.release()
+
+    def size(self):
+        return len(self._buffer)
 
     def poll(self):
-        pass
+        print(self._buffer)
+        if  "tcpclient" in self._buffer:
+            print(self._buffer["tcpclient"].data)
+
+        # for x in self._buffer.values():
+        #     print(x)
+        #     if len(x.data > 0):
+        #         print("Message in channel")
+        #         msg = x.data.pop(0)
+        #         for y in x.subscribers:
+        #             y.callback(msg)
 
 
 @dataclass
