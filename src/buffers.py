@@ -18,18 +18,21 @@ class MsgObject:
 
 class MessageBuffer:
     _instance = None
-    _buffer = {}
     _lock = threading.Lock()
+
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             with cls._lock:
-                if not cls._instance:
-                    print("Instance created")
+                if cls._instance is None:
+                    print("Instance of buffer created")
                     cls._instance = super(MessageBuffer, cls).__new__(cls, *args, **kwargs)
 
+                    # init other stuff in the class
+                    cls._instance._buffer = {}
 
         return cls._instance
+
 
     def publish(self, topic: str, msg: str):
         self._lock.acquire()
@@ -44,6 +47,7 @@ class MessageBuffer:
 
         self._lock.release()
 
+
     def subscribe(self, topic: str, client_id: str, callback: Callable):
         self._lock.acquire()
 
@@ -54,21 +58,26 @@ class MessageBuffer:
 
         self._lock.release()
 
+
     def size(self):
         return len(self._buffer)
+
 
     def poll(self):
         print(self._buffer)
         if  "tcpclient" in self._buffer:
             print(self._buffer["tcpclient"].data)
 
-        # for x in self._buffer.values():
-        #     print(x)
-        #     if len(x.data > 0):
-        #         print("Message in channel")
-        #         msg = x.data.pop(0)
-        #         for y in x.subscribers:
-        #             y.callback(msg)
+        for x in self._buffer.values():
+            if len(x.data) > 0:
+                print("Message in channel")
+                msg = x.data.pop(0)
+                for y in x.subscribers:
+                    y.callback(msg)
+
+
+    def check_lock(self):
+        return self._lock.locked()
 
 
 @dataclass
@@ -81,15 +90,18 @@ class ThreadBuffer:
     _instance   = None
     _buffer     = []
 
+
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(ThreadBuffer, cls).__new__(cls, *args, **kwargs)
         return cls._instance
 
+
     def add_thread(self, thread_id, thread):
         self._buffer.append(MetaThread(thread_id, thread))
 
         print(self._buffer)
+
 
     def remove_thread(self, thread_id: str):
         for i in range(0, len(self._buffer)):

@@ -2,6 +2,18 @@ import socket
 import ssl
 import threading
 
+
+class TCPBase:
+    def __init__(self):
+        pass
+
+
+class TCPServer(TCPBase):
+    def __init__(self):
+        super.__init__()
+        pass
+
+
 class TCPClient:
     def __init__(self, ip: str, port: int):
         self.socket = None

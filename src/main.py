@@ -6,7 +6,7 @@ from src.about_view import AboutView
 from tcp_client_view import SocketView
 import threading
 import config
-from src.buffers import ThreadBuffer, MessageBuffer
+from buffers import ThreadBuffer, MessageBuffer
 
 
 APP_TITLE   = "Transport Layer Tester"
@@ -14,6 +14,7 @@ APP_TITLE   = "Transport Layer Tester"
 
 thread_buffer = ThreadBuffer()
 gui_closed = False
+
 
 
 class App(QtWidgets.QWidget):
@@ -51,20 +52,21 @@ def run_app():
 
 
 def run_broker():
+    msg_buf = MessageBuffer()
     global gui_closed
 
     print("Thread: [Broker] Started.")
 
-    msg_buf = MessageBuffer()
+    if msg_buf.check_lock():
+        pass
+
     while not gui_closed:
-        # print("Update buffer")
         msg_buf.poll()
-        time.sleep(1)
 
     return
 
 
-def main():
+if "__main__" == __name__:
     t1 = threading.Thread(target=run_app)
     t2 = threading.Thread(target=run_broker)
 
@@ -74,9 +76,5 @@ def main():
     t2.start()
     t1.start()
 
-
     t1.join()
     t2.join()
-
-if "__main__" == __name__:
-    main()
