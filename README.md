@@ -4,6 +4,8 @@
 This tool is created as a testplatform for testing certain network functions.
 This tool is written for cross platform, it works both on Linux, MacOS and Windows.
 
+This tool is still under construction, so it doesn't work yet.
+
 ## Libraries
 * PySide6
 
