@@ -3,6 +3,9 @@ from PySide6 import QtCore, QtWidgets
 
 class AboutView(QtWidgets.QWidget):
     def __init__(self):
+        """
+        Constructor
+        """
         super().__init__()
 
         self.layout         = QtWidgets.QVBoxLayout(self)
@@ -12,6 +15,10 @@ class AboutView(QtWidgets.QWidget):
         self.draw()
 
     def draw(self):
+        """
+        Method to draw the window
+        :return:
+        """
         # Config widget Bottom
         self.widget_bottom.setFixedHeight(50)
 

@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets
 from tcp import TCPClient
-from buffers import MessageBuffer, MsgObject
+from buffers import MessageBuffer, MsgObject, ThreadBuffer
 import threading
 
 
@@ -10,12 +10,15 @@ FIXED_WIDGET_HEIGHT = 20
 
 class SocketView(QtWidgets.QWidget):
     def __init__(self):
+        """
+        Constructor
+        """
         super().__init__()
 
         self.tcp_client = None
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_text_browser)
-        self.timer.start(100)
+        self.timer.start(1)
 
         self.layout         = QtWidgets.QHBoxLayout(self)
         self.layout_left    = QtWidgets.QVBoxLayout()
@@ -30,6 +33,9 @@ class SocketView(QtWidgets.QWidget):
         self.buffer = MessageBuffer()
         self.message = ""
 
+        self.thread_buffer = ThreadBuffer()
+        self.thread_counter = 0
+
         # Try to subscribe
         self.buffer.subscribe("tcpclient", "gui", self.update_buffer)
 
@@ -37,6 +43,10 @@ class SocketView(QtWidgets.QWidget):
 
 
     def draw(self):
+        """
+        Method to draw the frontend page
+        :return: None
+        """
         self.text_browser = QtWidgets.QTextBrowser()
 
         # These stuf are for filling the ip address
@@ -125,6 +135,8 @@ class SocketView(QtWidgets.QWidget):
         self.group_connections.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         # These stuff is for handling send data
+
+
         self.input_send = QtWidgets.QLineEdit()
         self.input_send.setPlaceholderText("Type here....")
         self.input_send.setFixedHeight(40)
@@ -152,34 +164,96 @@ class SocketView(QtWidgets.QWidget):
 
 
     def update_text_browser(self):
+        """
+        Update method for updating the textbox
+        :return: None
+        """
         # Update the contents of the
         if len(self.message) > 0:
             # self.text_browser.clear()
             self.text_browser.append(self.message)
             self.message = ""
 
+
     def connect_to_socket(self):
+        """
+        Method to setup threads for connecting to a TCP Server
+        :return:
+        """
+        if len(self.input_ip.text()) == 0:
+            return
+
+        if len(self.input_port.text()) == 0:
+            return
+
         self.ip_address = self.input_ip.text()
         self.ip_port    = int(self.input_port.text())
 
         self.buffer.publish("tcpclient", f"Trying to connect to: {self.ip_address}:{self.ip_port}")
 
-        if len(self.ip_address) > 0:
-            print(self.ip_address)
+        t = threading.Thread(target=self.tcp_worker, args=(self.ip_address, self.ip_port, f"tcp_client_{self.thread_counter}"))
+        t.start()
 
-        if self.ip_port > 0:
-            print(self.ip_port)
+        self.thread_buffer.add_thread(f"tcp_client_{self.thread_counter}", t)
 
-        # self.tcp_client = TCPClient(self.ip_address, self.ip_port)
-        # self.tcp_client.connect()
+        self.thread_counter += 1
 
 
     def send_to_socket(self):
+        """
+        This method is gonna send data to the socket
+        :return:
+        """
         pass
 
+
     def ping_to_socket(self):
-        self.buffer.publish("tcpclient", "Trying to ping: ")
+        """
+        Method to ping the socket to check if the socket is online
+        :return: None
+        """
+        if len(self.input_ip.text()) == 0:
+            return
+
+        if len(self.input_port.text()) == 0:
+            return
+
+        self.ip_address = self.input_ip.text()
+        self.ip_port = int(self.input_port.text())
+
 
     def update_buffer(self, msg: str):
-        print("Callback called!")
+        """
+        Callback method for receiving data from the message queue
+        :param msg:
+        :return: None
+        """
         self.message = msg
+
+
+    def tcp_worker(self, ip: str, port: int, thread_id: str):
+        """
+        Worker method which is gonna be used in the threads that this window is gonna spawn
+        :param ip:
+        :param port:
+        :return: None
+        """
+        self.buffer.publish("tcpclient", f"thread: {thread_id} tries to connect to: {ip}:{port}")
+
+        # Set up tcp server and try to connect to a given
+        client = TCPClient(ip, port)
+        client.set_enable_tls(False)
+        client.connect()
+
+        # Abort thread if not connected
+        if not client.get_connected():
+            self.buffer.publish("tcpclient", f"thread: {thread_id} failed to connect to: {ip}:{port}")
+            return
+
+        self.buffer.publish("tcpclient", f"thread: {thread_id} is succesfully connected to: {ip}:{port}")
+
+        # Run the client
+        while client.get_connected():
+            # data = client.recv()
+            # self.buffer.publish("tcpclient", data)
+            pass

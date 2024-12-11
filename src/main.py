@@ -1,5 +1,5 @@
 import sys
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 import time
 
 from src.about_view import AboutView
@@ -16,9 +16,11 @@ thread_buffer = ThreadBuffer()
 gui_closed = False
 
 
-
 class App(QtWidgets.QWidget):
     def __init__(self):
+        """
+        Constructor
+        """
         super().__init__()
 
         self.socket_view = SocketView()
@@ -34,7 +36,13 @@ class App(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.tabular)
 
+
     def closeEvent(self, event):
+        """
+        Method that is called when the application is closed
+        :param event:
+        :return:
+        """
         global gui_closed
         gui_closed = True
 
@@ -56,9 +64,6 @@ def run_broker():
     global gui_closed
 
     print("Thread: [Broker] Started.")
-
-    if msg_buf.check_lock():
-        pass
 
     while not gui_closed:
         msg_buf.poll()
